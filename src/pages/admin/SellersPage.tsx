@@ -14,6 +14,15 @@ import { useAuth } from '@/context/AuthContext'
 import { formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
+function phoneToEmail(phone: string): string {
+  const cleaned = phone.replace(/\D/g, '')
+  let normalized = cleaned
+  if (cleaned.startsWith('998')) normalized = cleaned
+  else if (cleaned.startsWith('0')) normalized = '998' + cleaned.slice(1)
+  else normalized = '998' + cleaned
+  return `${normalized}@crm.uz`
+}
+
 function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const qc = useQueryClient()
   const [form, setForm] = useState({
@@ -21,8 +30,14 @@ function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   })
   const [loading, setLoading] = useState(false)
 
+  const handlePhoneChange = (val: string) => {
+    const email = val.trim() ? phoneToEmail(val) : ''
+    setForm({ ...form, phone: val, email })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!form.phone) { toast.error("Telefon raqam kiritilishi shart"); return }
     setLoading(true)
     try {
       await sellersApi.create(form)
@@ -41,20 +56,34 @@ function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     <Modal isOpen={isOpen} onClose={onClose} title="Yangi Foydalanuvchi Qo'shish">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Ism *" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} required />
-          <Input label="Familiya" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+          <Input label="Ism *" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} required />
+          <Input label="Familiya" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
         </div>
-        <Input label="Email *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-        <Input label="Parol *" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
-        <Input label="Telefon" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+998901234567" />
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefon raqam *</label>
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={e => handlePhoneChange(e.target.value)}
+            placeholder="901234567"
+            required
+            className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+          />
+          <p className="text-xs text-slate-400 mt-1">Misol: 901234567 yoki +998901234567</p>
+        </div>
+
+        <Input label="Parol *" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} />
+
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rol *</label>
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
+          <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
             className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100">
             <option value="seller">Sotuvchi (Agent)</option>
             <option value="sotrudnik">Sotrudnik (O'rnatuvchi)</option>
           </select>
         </div>
+
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Bekor qilish</Button>
           <Button type="submit" isLoading={loading} className="flex-1">Qo'shish</Button>
@@ -93,8 +122,8 @@ export function AdminSellersPage() {
     onError: () => toast.error('Xatolik'),
   })
 
-  const filtered = sellers.filter((s) =>
-    `${s.first_name} ${s.last_name} ${s.email}`.toLowerCase().includes(search.toLowerCase())
+  const filtered = sellers.filter(s =>
+    `${s.first_name} ${s.last_name} ${s.email} ${s.phone}`.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -103,28 +132,30 @@ export function AdminSellersPage() {
         <div className="flex gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Qidirish..."
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Qidirish..."
               className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowAdd(true)}>Qo'shish</Button>
         </div>
 
-        <Table headers={['Xodim', 'Email', 'Telefon', 'Rol', 'Holat', 'Qo\'shilgan', 'Amallar']}>
+        <Table headers={['Xodim', 'Telefon', 'Rol', 'Holat', 'Qo\'shilgan', 'Amallar']}>
           {isLoading ? (
-            <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">Yuklanmoqda...</td></tr>
+            <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">Yuklanmoqda...</td></tr>
           ) : filtered.length === 0 ? (
             <EmptyState />
           ) : (
-            filtered.map((seller) => (
+            filtered.map(seller => (
               <tr key={seller.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                 <Td>
                   <div className="flex items-center gap-3">
                     <Avatar firstName={seller.first_name} lastName={seller.last_name} avatarUrl={seller.avatar_url} size="sm" />
-                    <p className="font-medium text-slate-900 dark:text-white">{seller.first_name} {seller.last_name}</p>
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-white">{seller.first_name} {seller.last_name}</p>
+                      <p className="text-xs text-slate-400">{seller.email?.replace('@crm.uz', '')}</p>
+                    </div>
                   </div>
                 </Td>
-                <Td>{seller.email}</Td>
-                <Td>{seller.phone || '—'}</Td>
+                <Td>{seller.phone || seller.email?.replace('@crm.uz', '').replace('998', '+998 ') || '—'}</Td>
                 <Td>
                   <Badge variant={seller.role === 'sotrudnik' ? 'purple' : 'blue'}>
                     {seller.role === 'sotrudnik' ? 'Sotrudnik' : 'Sotuvchi'}

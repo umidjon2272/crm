@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { authApi } from '@/api/auth'
 import toast from 'react-hot-toast'
 
 const adminLinks = [
@@ -22,6 +23,12 @@ const sellerLinks = [
   { to: '/seller/profile', label: 'Profil', icon: '👤' },
 ]
 
+const sotrudnikLinks = [
+  { to: '/sotrudnik', label: 'Dashboard', icon: '📊', end: true },
+  { to: '/sotrudnik/installations', label: "O'rnatishlar", icon: '🔧' },
+  { to: '/sotrudnik/profile', label: 'Profil', icon: '👤' },
+]
+
 interface LayoutProps {
   children: React.ReactNode
   title: string
@@ -30,36 +37,39 @@ interface LayoutProps {
 export function Layout({ children, title }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
-  const { user, profile, logout } = useAuth() as any
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
 
   const toggleDark = () => {
     document.documentElement.classList.toggle('dark')
-    setDark((d: boolean) => !d)
+    setDark(d => !d)
   }
 
   const handleLogout = async () => {
     try {
-      const { authApi } = await import('@/api/auth')
-      await authApi.logout(user?.id)
+      await authApi.logout(user?.id || '')
     } catch {}
     navigate('/login')
     toast.success('Chiqildi')
   }
 
-  const links = profile?.role === 'admin' ? adminLinks : sellerLinks
+  const links = profile?.role === 'admin' ? adminLinks :
+                profile?.role === 'sotrudnik' ? sotrudnikLinks :
+                sellerLinks
+
   const initials = `${profile?.first_name?.[0] || ''}${profile?.last_name?.[0] || ''}`.toUpperCase()
+
+  const roleLabel = profile?.role === 'admin' ? 'Admin' :
+                    profile?.role === 'sotrudnik' ? 'Sotrudnik' : 'Sotuvchi'
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full w-64 bg-slate-900 flex flex-col z-40 transition-transform duration-300
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+      <aside className={`fixed left-0 top-0 h-full w-64 bg-slate-900 flex flex-col z-40 transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex items-center gap-3 h-16 px-4 border-b border-slate-800">
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">C</div>
           <div className="flex-1">
@@ -84,10 +94,12 @@ export function Layout({ children, title }: LayoutProps) {
 
         <div className="p-3 border-t border-slate-800">
           <div className="flex items-center gap-3 px-2 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{initials || '?'}</div>
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {initials || '?'}
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-medium truncate">{profile?.first_name} {profile?.last_name}</p>
-              <p className="text-slate-400 text-xs">{profile?.role === 'admin' ? 'Admin' : 'Sotuvchi'}</p>
+              <p className="text-slate-400 text-xs">{roleLabel}</p>
             </div>
           </div>
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors">
@@ -98,7 +110,6 @@ export function Layout({ children, title }: LayoutProps) {
 
       {/* Main */}
       <div className="lg:ml-64 min-h-screen flex flex-col">
-        {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-3 sticky top-0 z-20">
           <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
             ☰
@@ -109,8 +120,7 @@ export function Layout({ children, title }: LayoutProps) {
           </button>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 p-3 lg:p-6">{children}</main>
+        <main className="flex-1 p-3 lg:p-6 pb-20 lg:pb-6">{children}</main>
       </div>
 
       {/* Mobile bottom nav */}
@@ -123,7 +133,7 @@ export function Layout({ children, title }: LayoutProps) {
                 ${isActive ? 'text-blue-600' : 'text-slate-400'}`
               }>
               <span className="text-xl">{icon}</span>
-              <span className="mt-0.5 truncate w-full text-center px-1">{label}</span>
+              <span className="mt-0.5 truncate w-full text-center px-1" style={{ fontSize: '10px' }}>{label}</span>
             </NavLink>
           ))}
         </div>

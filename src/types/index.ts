@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'seller'
+export type UserRole = 'admin' | 'seller' | 'sotrudnik'
 export type UserStatus = 'active' | 'blocked'
 
 export type VisitStatus =
@@ -9,6 +9,8 @@ export type VisitStatus =
   | 'uses_other_app'
   | 'need_manager'
   | 'revisit_needed'
+
+export type InstallationStatus = 'installed' | 'not_installed' | 'problem' | 'paid' | 'not_paid'
 
 export interface Profile {
   id: string
@@ -51,6 +53,22 @@ export interface Visit {
   created_at: string
   seller?: Profile
   store?: Store
+}
+
+export interface Installation {
+  id: string
+  sotrudnik_id: string
+  store_id: string
+  visit_id: string | null
+  status: InstallationStatus
+  notes: string | null
+  latitude: number | null
+  longitude: number | null
+  installed_at: string
+  created_at: string
+  sotrudnik?: Profile
+  store?: Store
+  visit?: Visit
 }
 
 export interface Log {
@@ -100,4 +118,20 @@ export const VISIT_STATUS_COLORS: Record<VisitStatus, string> = {
   uses_other_app: '#8b5cf6',
   need_manager: '#3b82f6',
   revisit_needed: '#f97316',
+}
+
+export const INSTALLATION_STATUS_LABELS: Record<InstallationStatus, string> = {
+  installed: "O'rnatildi",
+  not_installed: "O'rnatilmadi",
+  problem: 'Muammo bor',
+  paid: "Pul to'landi",
+  not_paid: "Pul to'lanmadi",
+}
+
+export const INSTALLATION_STATUS_COLORS: Record<InstallationStatus, string> = {
+  installed: '#22c55e',
+  not_installed: '#ef4444',
+  problem: '#f97316',
+  paid: '#3b82f6',
+  not_paid: '#6b7280',
 }

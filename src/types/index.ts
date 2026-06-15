@@ -12,6 +12,8 @@ export type VisitStatus =
 
 export type InstallationStatus = 'installed' | 'not_installed' | 'problem' | 'paid' | 'not_paid'
 
+export type StoreStatus = 'new' | 'interested' | 'not_interested' | 'has_program' | 'will_buy' | 'bought' | 'refused'
+
 export interface Profile {
   id: string
   email: string
@@ -30,10 +32,16 @@ export interface Store {
   seller_id: string
   store_name: string
   company_name: string
+  owner_name: string | null
   phone: string | null
   contact_person: string | null
   address: string | null
   notes: string | null
+  products: string | null
+  has_program: boolean | null
+  interested_in_program: string | null
+  seller_count: number | null
+  status: StoreStatus
   latitude: number | null
   longitude: number | null
   created_at: string
@@ -134,4 +142,24 @@ export const INSTALLATION_STATUS_COLORS: Record<InstallationStatus, string> = {
   problem: '#f97316',
   paid: '#3b82f6',
   not_paid: '#6b7280',
+}
+
+export const STORE_STATUS_LABELS: Record<StoreStatus, string> = {
+  new: 'Yangi',
+  interested: 'Qiziqish bildirdi',
+  not_interested: "Qiziqmadi",
+  has_program: 'Dastur bor',
+  will_buy: 'Oladi',
+  bought: 'Sotib oldi',
+  refused: 'Rad etdi',
+}
+
+export const STORE_STATUS_COLORS: Record<StoreStatus, string> = {
+  new: '#6b7280',
+  interested: '#f59e0b',
+  not_interested: '#ef4444',
+  has_program: '#8b5cf6',
+  will_buy: '#3b82f6',
+  bought: '#22c55e',
+  refused: '#dc2626',
 }

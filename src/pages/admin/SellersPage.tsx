@@ -16,7 +16,7 @@ import toast from 'react-hot-toast'
 
 function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const qc = useQueryClient()
-  const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', phone: '' })
+  const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', phone: '', role: 'seller' })
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +27,7 @@ function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       toast.success('Sotuvchi muvaffaqiyatli qo\'shildi')
       qc.invalidateQueries({ queryKey: ['sellers'] })
       onClose()
-      setForm({ email: '', password: '', first_name: '', last_name: '', phone: '' })
+      setForm({ email: '', password: '', first_name: '', last_name: '', phone: '', role: 'seller' })
     } catch (err: any) {
       toast.error(err.message || 'Xatolik yuz berdi')
     } finally {

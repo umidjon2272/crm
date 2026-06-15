@@ -6,7 +6,7 @@ export const sellersApi = {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('role', 'seller')
+      .in('role', ['seller', 'sotrudnik'])
       .order('created_at', { ascending: false })
     if (error) throw error
     return data || []
@@ -28,8 +28,10 @@ export const sellersApi = {
     first_name: string
     last_name: string
     phone: string
+    role?: string
   }) {
-    // Create auth user via admin API (requires service role - done via edge function or direct)
+    const role = sellerData.role || 'seller'
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: sellerData.email,
       password: sellerData.password,
@@ -37,7 +39,7 @@ export const sellersApi = {
         data: {
           first_name: sellerData.first_name,
           last_name: sellerData.last_name,
-          role: 'seller',
+          role,
         },
       },
     })
@@ -52,7 +54,7 @@ export const sellersApi = {
         first_name: sellerData.first_name,
         last_name: sellerData.last_name,
         phone: sellerData.phone,
-        role: 'seller',
+        role,
         status: 'active',
       })
       .select()
@@ -63,7 +65,7 @@ export const sellersApi = {
     await supabase.from('logs').insert({
       user_id: authData.user.id,
       action: 'CREATE_SELLER',
-      details: { email: sellerData.email, name: `${sellerData.first_name} ${sellerData.last_name}` },
+      details: { email: sellerData.email, role, name: `${sellerData.first_name} ${sellerData.last_name}` },
     })
 
     return data

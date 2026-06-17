@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Modal } from '@/components/ui/Modal'
 import { sellersApi } from '@/api/sellers'
+import { customRolesApi } from '@/api/customRoles'
 import { useAuth } from '@/context/AuthContext'
 import { formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -26,9 +27,14 @@ function phoneToEmail(phone: string): string {
 function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const qc = useQueryClient()
   const [form, setForm] = useState({
-    email: '', password: '', first_name: '', last_name: '', phone: '', role: 'seller'
+    email: '', password: '', first_name: '', last_name: '', phone: '', role: 'seller', custom_role_id: ''
   })
   const [loading, setLoading] = useState(false)
+
+  const { data: customRoles = [] } = useQuery({
+    queryKey: ['custom-roles'],
+    queryFn: customRolesApi.getAll,
+  })
 
   const handlePhoneChange = (val: string) => {
     const email = val.trim() ? phoneToEmail(val) : ''
@@ -40,11 +46,11 @@ function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     if (!form.phone) { toast.error("Telefon raqam kiritilishi shart"); return }
     setLoading(true)
     try {
-      await sellersApi.create(form)
+      await sellersApi.create({ ...form, custom_role_id: form.custom_role_id || null })
       toast.success(form.role === 'sotrudnik' ? 'Sotrudnik qo\'shildi' : 'Sotuvchi qo\'shildi')
       qc.invalidateQueries({ queryKey: ['sellers'] })
       onClose()
-      setForm({ email: '', password: '', first_name: '', last_name: '', phone: '', role: 'seller' })
+      setForm({ email: '', password: '', first_name: '', last_name: '', phone: '', role: 'seller', custom_role_id: '' })
     } catch (err: any) {
       toast.error(err.message || 'Xatolik yuz berdi')
     } finally {
@@ -84,6 +90,18 @@ function AddSellerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           </select>
         </div>
 
+        {customRoles.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Maxsus rol (ixtiyoriy)</label>
+            <select value={form.custom_role_id} onChange={e => setForm({ ...form, custom_role_id: e.target.value })}
+              className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100">
+              <option value="">Yo'q (standart rol)</option>
+              {customRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <p className="text-xs text-slate-400 mt-1">Maxsus rol tanlansa, foydalanuvchi faqat shu rolga belgilangan huquqlarga ega bo'ladi</p>
+          </div>
+        )}
+
         <div className="flex gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Bekor qilish</Button>
           <Button type="submit" isLoading={loading} className="flex-1">Qo'shish</Button>
@@ -102,6 +120,11 @@ export function AdminSellersPage() {
   const { data: sellers = [], isLoading } = useQuery({
     queryKey: ['sellers'],
     queryFn: sellersApi.getAll,
+  })
+
+  const { data: customRoles = [] } = useQuery({
+    queryKey: ['custom-roles'],
+    queryFn: customRolesApi.getAll,
   })
 
   const blockMutation = useMutation({
@@ -125,6 +148,14 @@ export function AdminSellersPage() {
   const filtered = sellers.filter(s =>
     `${s.first_name} ${s.last_name} ${s.email} ${s.phone}`.toLowerCase().includes(search.toLowerCase())
   )
+
+  const getRoleName = (seller: any) => {
+    if (seller.custom_role_id) {
+      const cr = customRoles.find(r => r.id === seller.custom_role_id)
+      if (cr) return cr.name
+    }
+    return seller.role === 'sotrudnik' ? 'Sotrudnik' : 'Sotuvchi'
+  }
 
   return (
     <Layout title="Xodimlar">
@@ -157,8 +188,8 @@ export function AdminSellersPage() {
                 </Td>
                 <Td>{seller.phone || seller.email?.replace('@crm.uz', '').replace('998', '+998 ') || '—'}</Td>
                 <Td>
-                  <Badge variant={seller.role === 'sotrudnik' ? 'purple' : 'blue'}>
-                    {seller.role === 'sotrudnik' ? 'Sotrudnik' : 'Sotuvchi'}
+                  <Badge variant={(seller as any).custom_role_id ? 'orange' : seller.role === 'sotrudnik' ? 'purple' : 'blue'}>
+                    {getRoleName(seller)}
                   </Badge>
                 </Td>
                 <Td>

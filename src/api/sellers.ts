@@ -29,6 +29,7 @@ export const sellersApi = {
     last_name: string
     phone: string
     role?: string
+    custom_role_id?: string | null
   }) {
     const role = sellerData.role || 'seller'
 
@@ -46,7 +47,7 @@ export const sellersApi = {
     if (authError) throw authError
     if (!authData.user) throw new Error('User creation failed')
 
-    const { data, error } = await supabase
+  const { data, error } = await supabase
       .from('profiles')
       .upsert({
         id: authData.user.id,
@@ -56,6 +57,7 @@ export const sellersApi = {
         phone: sellerData.phone,
         role,
         status: 'active',
+        custom_role_id: sellerData.custom_role_id || null,
       })
       .select()
       .single()

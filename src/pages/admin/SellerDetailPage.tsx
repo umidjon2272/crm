@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Mail, Phone, Calendar, Eye, EyeOff, Edit, Key } from 'lucide-react'
 import { Layout } from '@/components/layout/Layout'
 import { Card } from '@/components/ui/Card'
@@ -91,19 +91,19 @@ function ChangePasswordModal({ seller, isOpen, onClose }: { seller: any; isOpen:
     if (newPassword.length < 6) { toast.error('Parol kamida 6 ta belgi'); return }
     setLoading(true)
     try {
-      // Update password via Supabase admin
-      const { error } = await supabase.auth.admin.updateUserById(seller.id, { password: newPassword })
-      if (error) {
-        // Fallback: use regular update (works if admin)
-        const { error: err2 } = await supabase.rpc('update_user_password', { user_id: seller.id, new_password: newPassword })
-        if (err2) throw err2
-      }
+      const { data: session } = await supabase.auth.getSession()
+      const { data, error } = await supabase.functions.invoke('update-password', {
+        body: { userId: seller.id, newPassword },
+        headers: { Authorization: `Bearer ${session.session?.access_token}` },
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+
       toast.success('Parol yangilandi')
       onClose()
       setNewPassword('')
-    } catch {
-      // Try alternative method
-      toast.error("Parolni o'zgartirish uchun Supabase Service Role kerak. SQL Editor da: SELECT auth.users WHERE id = '" + seller.id + "'")
+    } catch (err: any) {
+      toast.error(err.message || 'Xatolik yuz berdi')
     } finally {
       setLoading(false)
     }
@@ -133,12 +133,6 @@ function ChangePasswordModal({ seller, isOpen, onClose }: { seller: any; isOpen:
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
-        </div>
-
-        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-          <p className="text-xs text-amber-700 dark:text-amber-300">
-            💡 Yoki Supabase → Authentication → Users → foydalanuvchini toping → "..." → "Reset password" bosing
-          </p>
         </div>
 
         <div className="flex gap-3 pt-2">

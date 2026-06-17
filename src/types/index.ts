@@ -23,8 +23,10 @@ export interface Profile {
   role: UserRole
   status: UserStatus
   avatar_url: string | null
+  custom_role_id: string | null
   created_at: string
   updated_at: string
+  custom_role?: CustomRole
 }
 
 export interface Store {
@@ -182,4 +184,14 @@ export const STORE_STATUS_COLORS: Record<StoreStatus, string> = {
   will_buy: '#3b82f6',
   bought: '#22c55e',
   refused: '#dc2626',
+}
+export interface CustomRole {
+  id: string
+  name: string
+  can_add_stores: boolean
+  can_edit_stores: boolean
+  can_add_visits: boolean
+  can_view_reports: boolean
+  can_add_users: boolean
+  created_at: string
 }

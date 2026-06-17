@@ -63,6 +63,8 @@ export interface Visit {
   store?: Store
 }
 
+export type PaymentStatus = 'paid' | 'partial' | 'debt' | 'unpaid'
+
 export interface Installation {
   id: string
   sotrudnik_id: string
@@ -74,9 +76,27 @@ export interface Installation {
   longitude: number | null
   installed_at: string
   created_at: string
+  amount_paid: number
+  debt_amount: number
+  debt_due_date: string | null
+  payment_status: PaymentStatus
   sotrudnik?: Profile
   store?: Store
   visit?: Visit
+}
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  paid: "To'liq to'landi",
+  partial: "Qisman to'landi",
+  debt: 'Qarz',
+  unpaid: "To'lanmadi",
+}
+
+export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
+  paid: '#22c55e',
+  partial: '#f59e0b',
+  debt: '#ef4444',
+  unpaid: '#6b7280',
 }
 
 export interface Log {
